@@ -1,0 +1,280 @@
+/* Karnataka Hotspots - Aurora theme extensions */
+
+.hotspots-layout {
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+        "map"
+        "cities"
+        "analysis";
+}
+
+.hotspots-layout > .map-card--karnataka {
+    grid-area: map;
+}
+
+.hotspots-layout > .city-panel {
+    grid-area: cities;
+}
+
+.hotspots-layout > .analysis-panel {
+    grid-area: analysis;
+}
+
+.map-card--karnataka {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+.map-card--karnataka #karnatakaMap {
+    width: 100%;
+    height: clamp(420px, 60vh, 620px);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.last-updated-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(45, 212, 191, 0.14);
+    border: 1px solid rgba(45, 212, 191, 0.38);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    backdrop-filter: blur(var(--blur-card));
+}
+
+.hotspot-card-grid {
+    display: grid;
+    gap: 1rem;
+    max-height: 28rem;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.hotspot-card {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.1rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: rgba(7, 12, 21, 0.8);
+    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+    cursor: pointer;
+}
+
+.hotspot-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(45, 212, 191, 0.42);
+    box-shadow: 0 16px 45px rgba(56, 189, 248, 0.22);
+}
+
+.hotspot-card__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.hotspot-city {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+}
+
+.hotspot-power {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: var(--accent-cyan);
+}
+
+.hotspot-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+}
+
+.hotspot-card--high {
+    border-color: rgba(45, 212, 191, 0.5);
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.22), rgba(7, 12, 21, 0.78));
+}
+
+.hotspot-card--medium {
+    border-color: rgba(56, 189, 248, 0.48);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(7, 12, 21, 0.78));
+}
+
+.hotspot-card--low {
+    border-color: rgba(251, 191, 36, 0.48);
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.22), rgba(7, 12, 21, 0.78));
+}
+
+.legend-dot--high {
+    background: #2dd4bf;
+}
+
+.legend-dot--mid {
+    background: #38bdf8;
+}
+
+.legend-dot--low {
+    background: #fbbf24;
+}
+
+.stats-panel .stat-card {
+    text-align: center;
+}
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(5, 7, 15, 0.78);
+    backdrop-filter: blur(10px);
+    z-index: 60;
+}
+
+.loading-dialog {
+    padding: 2rem 2.75rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(145deg, rgba(7, 12, 21, 0.92), rgba(13, 31, 45, 0.75));
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 28px 80px rgba(56, 189, 248, 0.22);
+    display: grid;
+    gap: 1rem;
+    text-align: center;
+    color: var(--text-primary);
+}
+
+.loading-dialog .loader {
+    margin: 0 auto;
+}
+
+@media (max-width: 1024px) {
+    .hotspots-layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "map"
+            "cities"
+            "analysis";
+    }
+
+    .hotspot-card-grid {
+        max-height: 24rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .map-card--karnataka #karnatakaMap {
+        height: min(420px, 60vh);
+    }
+
+    .hotspot-card {
+        gap: 0.65rem;
+    }
+
+    .hotspot-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (min-width: 1120px) {
+    .hotspots-layout {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-areas:
+            "map map"
+            "cities analysis";
+    }
+}
+
+.analysis-panel .analysis-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+@media (min-width: 720px) {
+    .analysis-panel .analysis-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+}
+
+.chart-card {
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    background: rgba(7, 12, 21, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    display: grid;
+    gap: 0.75rem;
+}
+
+.chart-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.distribution-bar {
+    position: relative;
+    width: 100%;
+    height: 14px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: rgba(148, 163, 184, 0.22);
+    display: flex;
+}
+
+.distribution-segment {
+    height: 100%;
+}
+
+.distribution-segment.high {
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.7), rgba(13, 148, 136, 0.55));
+}
+
+.distribution-segment.medium {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.72), rgba(29, 78, 216, 0.55));
+}
+
+.distribution-segment.low {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.75), rgba(217, 119, 6, 0.55));
+}
+
+.distribution-legend {
+    display: grid;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.distribution-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.top-cities {
+    list-style: decimal;
+    padding-left: 1.25rem;
+    display: grid;
+    gap: 0.4rem;
+    color: var(--text-secondary);
+}
+
+.top-city {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.analysis-summary {
+    color: var(--text-secondary);
+    line-height: 1.55;
+    font-size: 0.95rem;
+}

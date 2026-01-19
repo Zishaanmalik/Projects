@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wind Power Prediction — Clean Dashboard</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" xintegrity="sha512-pb6Xgqv7g7oU9m1Qs6xq+YpK0g5Vv9m6z9y1qvZx9q3N2wY2q3m4Y5v6c7b8f9g0h1i2j3k4l5m6n7o8p9q0==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    /* -----------------------
+       Global Variables & Reset
+       ----------------------- */
+    :root{
+      --bg:#f4fbff;               /* light blue background */
+      --card:#ffffff;             /* card background */
+      --muted:#6b7280;           /* muted text */
+      --accent:#0b74de;         /* primary accent blue */
+      --accent-2:#0066cc;       /* darker accent */
+      --success:#16a34a;        /* success green */
+      --error:#dc2626;          /* error red */
+      --glass: rgba(255,255,255,0.65);
+      --radius:14px;
+      --maxwidth:1100px;
+    }
+
+    * { box-sizing: border-box; }
+    html,body{ height:100%; margin:0; padding:0; font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: linear-gradient(180deg,var(--bg),#e6f4ff); color:#0f172a; }
+
+    /* -----------------------
+       Page container
+       ----------------------- */
+    .page{
+      max-width:var(--maxwidth);
+      margin:28px auto;
+      padding:26px;
+    }
+
+    /* Top header */
+    .topbar{
+      display:flex;
+      gap:18px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:20px;
+    }
+
+    .brand{
+      display:flex; gap:14px; align-items:center;
+    }
+
+    .logo{
+      width:56px; height:56px; border-radius:10px; background: linear-gradient(135deg,var(--accent),var(--accent-2)); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; box-shadow: 0 6px 18px rgba(11,116,222,0.18);
+    }
+
+    .brand h1{ font-size:20px; margin:0; }
+    .brand p{ margin:0; color:var(--muted); font-size:13px; }
+
+    /* Utilities */
+    .controls{ display:flex; gap:12px; align-items:center; }
+    .btn{ padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:600; transition: transform 0.1s; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary{ background:var(--accent); color:white; box-shadow: 0 4px 12px rgba(11,116,222,0.25); }
+    .btn-ghost{ background:transparent; border:1px solid rgba(15,23,42,0.06); }
+
+    /* Layout grid */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:22px;
+      align-items:start;
+    }
+
+    /* Left: form + history + charts */
+    .main-card{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:22px;
+      box-shadow: 0 6px 24px rgba(8,27,56,0.06);
+    }
+
+    .section-title{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .section-title h2{ margin:0; font-size:16px; }
+    .section-title p{ margin:0; color:var(--muted); font-size:13px; }
+
+    /* Form styles - stacked vertically */
+    form#predictForm{ display:flex; flex-direction:column; gap:12px; }
+
+    label{ display:block; font-size:13px; color:var(--muted); margin-bottom:6px; }
+    /* IMPORTANT: The input 'name' attribute determines the key in request.form */
+    input[type=number], input[type=text], select{
+      width:100%; padding:12px 14px; border-radius:10px; border:1px solid #e6eef9; background:transparent; font-size:15px; color:var(--accent-2);
+      outline:none; transition:box-shadow .18s ease, transform .12s ease;
+    }
+    input:focus{ box-shadow: 0 6px 18px rgba(11,116,222,0.08); transform:translateY(-1px); }
+
+    .row{ display:flex; gap:12px; }
+    .stack{ display:flex; flex-direction:column; gap:6px; }
+
+    .note{ font-size:13px; color:var(--muted); }
+
+    /* result area */
+    .result-area{ margin-top:14px; padding:16px; border-radius:12px; background: linear-gradient(180deg, rgba(11,116,222,0.04), rgba(11,116,222,0.02)); border:1px solid rgba(11,116,222,0.06); display:flex; align-items:center; justify-content:space-between; }
+
+    .result-left{ display:flex; gap:12px; align-items:center; }
+    .result-badge{ background:var(--accent); color:white; padding:12px 14px; border-radius:10px; font-weight:700; box-shadow: 0 6px 12px rgba(11,116,222,0.12); }
+    .result-text{ font-size:18px; font-weight:700; }
+    .result-meta{ font-size:13px; color:var(--muted); }
+
+    /* Right column */
+    .side-card{ background:var(--card); border-radius:var(--radius); padding:20px; box-shadow: 0 6px 18px rgba(8,27,56,0.06); }
+
+    .stat{ display:flex; justify-content:space-between; margin-bottom:14px; }
+    .stat .label{ color:var(--muted); font-size:13px; }
+    .stat .value{ font-weight:700; font-size:18px; }
+
+    /* history log */
+    .history{ margin-top:18px; max-height:220px; overflow:auto; padding-right:6px; }
+    .entry{ padding:12px; border-radius:10px; background:linear-gradient(180deg, rgba(5,80,130,0.02), rgba(255,255,255,0.02)); border:1px solid rgba(10,30,60,0.03); margin-bottom:10px; }
+    .entry small{ color:var(--muted); }
+
+    /* footer */
+    footer{ margin-top:18px; font-size:13px; color:var(--muted); text-align:center; }
+
+    /* responsiveness */
+    @media (max-width:980px){ .grid{ grid-template-columns: 1fr; } .page{ padding:16px; } }
+
+    /* decorative gradients and animations (subtle) */
+    .glow{ position:relative; }
+    .glow:after{ content:''; position:absolute; right:-40px; top:-40px; width:140px; height:140px; background: radial-gradient(circle at 30% 30%, rgba(11,116,222,0.12), transparent 40%); border-radius:50%; z-index:0; }
+
+  </style>
+</head>
+<body>
+
+  <div class="page">
+
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">WP</div>
+        <div>
+          <h1>WindPower AI</h1>
+          <p>Clean Professional Dashboard — Predict wind power quickly</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-ghost" onclick="openNotebook()"><i class="fa fa-book"></i>&nbsp; Open Notebook</button>
+        <button class="btn btn-primary" onclick="location.reload()"><i class="fa fa-refresh"></i>&nbsp; Reload</button>
+      </div>
+    </div>
+
+    <div class="grid">
+
+      <div class="main-card">
+
+        <div class="section-title">
+          <h2>Predict Wind Power</h2>
+          <p class="note">Enter site / sensor measurements below (7 features)</p>
+        </div>
+
+        <form id="predictForm" onsubmit="return handleSubmit(event)">
+
+          <div class="stack">
+            <label for="windspeed">1. Wind Speed (m/s)</label>
+            <input id="windspeed" name="windspeed" type="number" step="any" placeholder="e.g. 7.5" required />
+          </div>
+
+          <div class="stack">
+            <label for="winddirection">2. Wind Direction (deg)</label>
+            <input id="winddirection" name="winddirection" type="number" step="any" placeholder="0 - 360" required />
+          </div>
+
+          <div class="stack">
+            <label for="temperature">3. Temperature (°C)</label>
+            <input id="temperature" name="temperature" type="number" step="any" placeholder="e.g. 24.3" required />
+          </div>
+
+          <div class="stack">
+            <label for="pressure">4. Pressure (hPa)</label>
+            <input id="pressure" name="pressure" type="number" step="any" placeholder="e.g. 1013" required />
+          </div>
+
+          <div class="stack">
+            <label for="airdensity">5. Air Density (kg/m³)</label>
+            <input id="airdensity" name="airdensity" type="number" step="any" placeholder="e.g. 1.225" required />
+          </div>
+
+          <div class="stack">
+            <label for="rotorrpm">6. Rotor RPM</label>
+            <input id="rotorrpm" name="rotorrpm" type="number" step="any" placeholder="e.g. 1500" required />
+          </div>
+
+          <div class="stack">
+            <label for="bladepitchangle">7. Blade Pitch Angle (deg)</label>
+            <input id="bladepitchangle" name="bladepitchangle" type="number" step="any" placeholder="e.g. 2.5" required />
+          </div>
+
+
+          <div style="margin-top:8px; display:flex; gap:12px;">
+            <button class="btn btn-primary" type="submit">⚡ Predict Power</button>
+            <button class="btn btn-ghost" type="button" onclick="clearForm()">Clear</button>
+          </div>
+
+        </form>
+
+        <div id="resultWrap" class="result-area" style="margin-top:18px; display:none;">
+          <div class="result-left">
+            <div class="result-badge">⚡</div>
+            <div>
+              <div class="result-text" id="resultValue">0 kW</div>
+              <div class="result-meta" id="resultMeta">Model prediction</div>
+            </div>
+          </div>
+          <div>
+            <button class="btn btn-ghost" onclick="copyResult()">Copy</button>
+          </div>
+        </div>
+
+        <div style="margin-top:22px;">
+          <div class="section-title"><h2>Preview Chart</h2><p class="note">Quick visual of recent entries</p></div>
+          <canvas id="miniChart" width="800" height="220" style="width:100%; border-radius:8px; background:linear-gradient(180deg, rgba(6,86,145,0.03), rgba(255,255,255,0.02));"></canvas>
+        </div>
+
+        <div style="margin-top:22px;">
+          <div class="section-title"><h2>Recent Predictions</h2><p class="note">Saved on this browser session</p></div>
+          <div class="history" id="history"></div>
+        </div>
+
+      </div>
+
+      <div class="side-card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3 style="margin:0;">Quick Stats</h3>
+            <p class="note" style="margin:0;">Session summary</p>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700; font-size:18px;">Live</div>
+            <div class="note">Status</div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="stat"><div class="label">Entries</div><div class="value" id="statCount">0</div></div>
+          <div class="stat"><div class="label">Last Prediction</div><div class="value" id="statLast">—</div></div>
+          <div class="stat"><div class="label">Avg Power (kW)</div><div class="value" id="statAvg">—</div></div>
+        </div>
+
+        <hr style="margin:18px 0; border:none; border-top:1px solid rgba(10,20,40,0.04);" />
+
+        <div>
+          <h3 style="margin:0 0 8px 0;">Model</h3>
+          <p class="note">Loaded on server. Ensure your Flask backend exposes <code>/predict</code> endpoint that accepts JSON (POST) OR form POST depending on configuration.</p>
+
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn btn-primary" onclick="fetchModelInfo()">Model Info</button>
+            <button class="btn btn-ghost" onclick="downloadCSV()">Export CSV</button>
+          </div>
+        </div>
+
+        <hr style="margin:18px 0; border:none; border-top:1px solid rgba(10,20,40,0.04);" />
+
+        <div>
+          <h3 style="margin:0 0 8px 0;">Advanced</h3>
+          <p class="note">Extra utilities for testing</p>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+            <button class="btn btn-ghost" onclick="seedRandomTest()">Seed Random Test</button>
+            <button class="btn btn-ghost" onclick="clearHistory()">Clear History</button>
+          </div>
+        </div>
+
+        <footer style="margin-top:18px;">Built for demo — Connect to Flask server at <code>http://127.0.0.1:5000</code></footer>
+      </div>
+
+    </div> </div> <script>
+    /* ---------------------------------
+       Client-side interactive logic
+       --------------------------------- */
+
+    // in-memory store
+    const store = { entries: [] };
+
+    // helper: format number nicely
+    function fmt(num){
+      if(num === null || num === undefined) return '—';
+      if(typeof num === 'number') return (Math.round(num*100)/100).toFixed(2);
+      return String(num);
+    }
+
+    // update stats in right column
+    function updateStats(){
+      const n = store.entries.length;
+      document.getElementById('statCount').innerText = n;
+      if(n===0){ document.getElementById('statLast').innerText='—'; document.getElementById('statAvg').innerText='—'; return; }
+      const last = store.entries[0];
+      document.getElementById('statLast').innerText = fmt(last.prediction) + ' kW';
+      const avg = store.entries.reduce((s,e)=>s+Number(e.prediction),0)/n;
+      document.getElementById('statAvg').innerText = fmt(avg) + ' kW';
+    }
+
+    // add history entry
+    function pushHistory(entry){
+      store.entries.unshift(entry);
+      // keep max 50 items
+      if(store.entries.length>50) store.entries.pop();
+      renderHistory(); updateStats(); drawMiniChart();
+    }
+
+    function renderHistory(){
+      const el = document.getElementById('history'); el.innerHTML = '';
+      if(store.entries.length===0){ el.innerHTML = '<div class="note">No predictions yet. Use the form above to predict.</div>'; return; }
+      for(const it of store.entries){
+        // Keys in the store are lowercase now
+        const div = document.createElement('div'); div.className='entry';
+        div.innerHTML = `<strong>${fmt(it.prediction)} kW</strong> &nbsp; <small class="note">at ${new Date(it.time).toLocaleString()}</small><div style="margin-top:6px; color:var(--muted); font-size:13px">WS: ${it.windspeed}, RPM: ${it.rotorrpm}</div>`;
+        el.appendChild(div);
+      }
+    }
+
+    // simple canvas mini chart (no external dependency)
+    function drawMiniChart(){
+      const canvas = document.getElementById('miniChart');
+      const ctx = canvas.getContext('2d');
+      // clear
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      // prepare data
+      const data = store.entries.slice(0,20).map(x=>Number(x.prediction));
+      if(data.length===0) return;
+      // scale
+      const w = canvas.width, h = canvas.height; const pad=30;
+      const max = Math.max(...data); const min = Math.min(...data);
+      const range = Math.max(1, max-min);
+      // draw line
+      ctx.beginPath(); ctx.lineWidth=2.6; ctx.strokeStyle = '#0b74de';
+      for(let i=0;i<data.length;i++){
+        const x = pad + (i/(data.length-1))*(w-2*pad);
+        const y = h - pad - ((data[i]-min)/range)*(h-2*pad);
+        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+      // fill gradient
+      const grad = ctx.createLinearGradient(0,0,0,h); grad.addColorStop(0,'rgba(11,116,222,0.12)'); grad.addColorStop(1,'rgba(11,116,222,0.02)');
+      ctx.lineTo(w-pad,h-pad); ctx.lineTo(pad,h-pad); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+
+      // draw points
+      for(let i=0;i<data.length;i++){
+        const x = pad + (i/(data.length-1))*(w-2*pad);
+        const y = h - pad - ((data[i]-min)/range)*(h-2*pad);
+        ctx.beginPath(); ctx.fillStyle = '#fff'; ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.fillStyle = '#0b74de'; ctx.arc(x,y,2,0,Math.PI*2); ctx.fill();
+      }
+
+    }
+
+    // clear form
+    function clearForm(){ document.getElementById('predictForm').reset(); }
+
+    // copy result to clipboard
+    function copyResult(){
+      const text = document.getElementById('resultValue').innerText;
+      // Using document.execCommand('copy') for compatibility in this environment
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        // Replaced alert() with console log/message for security policy compliance
+        console.log('Result copied to clipboard');
+      } catch (err) {
+        console.error('Could not copy text: ', err);
+      }
+      document.body.removeChild(textarea);
+    }
+
+    // UPDATED: open notebook file now points to the Flask download route
+    function openNotebook(){
+      const path = '/notebook'; // New Flask route
+      window.open(path, '_blank');
+    }
+
+    // fetch model info (dummy call to server)
+    async function fetchModelInfo(){
+      try{
+        const res = await fetch('/model-info');
+        if(!res.ok) throw new Error('no model info');
+        const info = await res.json();
+        console.log('Model Info:', info);
+      }catch(err){ console.error('Unable to fetch model info from server.', err); }
+    }
+
+    // export CSV from session data
+    function downloadCSV(){
+      if(store.entries.length===0){ console.log('No data to export'); return; }
+      // Header MUST match the keys stored in the history entry (lowercase)
+      const rows = [['timestamp','windspeed','winddirection','temperature','pressure','airdensity','rotorrpm','bladepitchangle','prediction']];
+      for(const r of store.entries){
+        rows.push([
+            new Date(r.time).toISOString(),
+            r.windspeed,
+            r.winddirection,
+            r.temperature,
+            r.pressure,
+            r.airdensity,
+            r.rotorrpm,
+            r.bladepitchangle,
+            r.prediction
+        ]);
+      }
+      const csv = rows.map(r=> r.map(c=> '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='predictions.csv'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    // clear history
+    function clearHistory(){
+      if(window.confirm('Clear all session history?')){
+        store.entries=[];
+        renderHistory();
+        updateStats();
+        drawMiniChart();
+      }
+    }
+
+    // seed random test data and post to server
+    function seedRandomTest(){
+      // CRITICAL FIX: KEYS MUST BE LOWERCASE to match the form names and server expectation
+      const sample = {
+        windspeed: +(Math.random()*14+2).toFixed(2),
+        winddirection: Math.floor(Math.random()*360),
+        temperature:+(Math.random()*25+5).toFixed(2),
+        pressure:+(990+Math.random()*40).toFixed(2),
+        airdensity:+(1.15+Math.random()*0.15).toFixed(3),
+        rotorrpm:+(500+Math.random()*1200).toFixed(0),
+        bladepitchangle: +(Math.random()*5).toFixed(2)
+      };
+
+      // fill form
+      document.getElementById('windspeed').value = sample.windspeed;
+      document.getElementById('winddirection').value = sample.winddirection;
+      document.getElementById('temperature').value = sample.temperature;
+      document.getElementById('pressure').value = sample.pressure;
+      document.getElementById('airdensity').value = sample.airdensity;
+      document.getElementById('rotorrpm').value = sample.rotorrpm;
+      document.getElementById('bladepitchangle').value = sample.bladepitchangle;
+
+      // auto submit
+      handleSubmit(new Event('submit'));
+    }
+
+    // main submit handler — posts JSON to /predict
+    async function handleSubmit(ev){
+      if(ev && ev.preventDefault) ev.preventDefault();
+
+      // --- CRITICAL FIX: KEYS ARE NOW ALL LOWERCASE ---
+      const data = {
+        windspeed: parseFloat(document.getElementById('windspeed').value),
+        winddirection: parseFloat(document.getElementById('winddirection').value),
+        temperature: parseFloat(document.getElementById('temperature').value),
+        pressure: parseFloat(document.getElementById('pressure').value),
+        airdensity: parseFloat(document.getElementById('airdensity').value),
+        rotorrpm: parseFloat(document.getElementById('rotorrpm').value),
+        bladepitchangle: parseFloat(document.getElementById('bladepitchangle').value)
+      };
+
+      // validation
+      for(const k in data){ if(isNaN(data[k])){ console.error('Please enter all values correctly'); return false; } }
+
+      // show loading state
+      const resultWrap = document.getElementById('resultWrap');
+      document.getElementById('resultValue').innerText = 'Predicting...'; resultWrap.style.display='flex';
+
+      // attempt JSON POST to /predict (Flask recommended route)
+      try{
+        const resp = await fetch('/predict', {
+          method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(data)
+        });
+
+        const json = await resp.json();
+
+        if(json.prediction !== undefined){
+          // Store data using the lowercase keys
+          const entry = { ...data, prediction: Number(json.prediction), time: Date.now() };
+          document.getElementById('resultValue').innerText = fmt(entry.prediction) + ' kW';
+          document.getElementById('resultMeta').innerText = 'Predicted at ' + new Date(entry.time).toLocaleTimeString();
+          pushHistory(entry);
+
+        } else if(json.error){
+          document.getElementById('resultValue').innerText = 'Error';
+          document.getElementById('resultMeta').innerText = json.error;
+          console.error('Server error: ' + json.error);
+        } else {
+          document.getElementById('resultValue').innerText = 'Unknown response';
+          document.getElementById('resultMeta').innerText = JSON.stringify(json);
+          console.error('Unknown response from server:', json);
+        }
+
+      }catch(err){
+        // If JSON POST fails (CORS or server not JSON), try form POST fallback
+        try{
+          const formData = new FormData(document.getElementById('predictForm')); // Use native form data
+
+          const resp2 = await fetch('/predict', { method:'POST', body: formData });
+          // If server returns HTML (only happens if the server can't handle JSON or is misconfigured):
+          const text = await resp2.text();
+          const found = text.match(/(\d+\.?\d*)\s*kW/gi);
+
+          if(found && found.length>0){
+            const num = parseFloat(found[0]);
+            // Re-create entry for history
+            const entry = { ...data, prediction: Number(num), time: Date.now() };
+            document.getElementById('resultValue').innerText = fmt(entry.prediction) + ' kW';
+            document.getElementById('resultMeta').innerText = 'Predicted (form) at ' + new Date(entry.time).toLocaleTimeString();
+            pushHistory(entry);
+          } else {
+            document.getElementById('resultValue').innerText = 'Connection Error';
+            document.getElementById('resultMeta').innerText = 'Could not reach server or parse response';
+            console.error('Could not parse server response. Server response text:', text);
+          }
+
+        }catch(err2){
+          document.getElementById('resultValue').innerText = 'Offline';
+          document.getElementById('resultMeta').innerText = 'No server connection';
+          console.error('Network error: ' + err2.message);
+        }
+      }
+
+      return false;
+    }
+
+    // initialize canvas size
+    function init(){
+      const c = document.getElementById('miniChart');
+      c.width = c.clientWidth * (window.devicePixelRatio || 1);
+      c.height = 220 * (window.devicePixelRatio || 1);
+      drawMiniChart(); renderHistory(); updateStats();
+    }
+
+    window.addEventListener('load', init);
+    window.addEventListener('resize', () => { const c=document.getElementById('miniChart'); c.width=c.clientWidth*(window.devicePixelRatio||1); drawMiniChart(); });
+
+  </script>
+
+</body>
+</html>

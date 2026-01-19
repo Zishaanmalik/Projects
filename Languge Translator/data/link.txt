@@ -1,0 +1,3 @@
+IIT Bombay English-Hindi Translation Dataset
+
+https://www.kaggle.com/datasets/vaibhavkumar11/hindi-english-parallel-corpus

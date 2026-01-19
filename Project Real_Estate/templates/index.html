@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Real Estate Price Predictor</title>
+
+  <style>
+    /* Simple, professional light theme */
+    :root{
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --text: #0f172a;
+      --accent: #2563eb;
+      --border: #e6eef9;
+      --radius: 12px;
+      --shadow: 0 8px 30px rgba(15,23,42,0.06);
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; margin:0; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; }
+    .wrap{ max-width:760px; margin:40px auto; padding:20px; }
+
+    header{
+      display:flex; align-items:center; gap:14px; margin-bottom:18px;
+    }
+    .logo {
+      width:64px; height:64px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg,var(--accent), #06b6d4); color:white; font-weight:800; font-size:22px;
+      box-shadow: 0 8px 30px rgba(37,99,235,0.12);
+    }
+    h1{ margin:0; font-size:1.25rem; }
+    p.lead{ margin:0; color:var(--muted); font-size:0.95rem; }
+
+    main.card{
+      background:var(--card); padding:20px; border-radius:var(--radius); border:1px solid var(--border); box-shadow:var(--shadow);
+    }
+
+    form.grid{
+      display:grid; grid-template-columns: 1fr 1fr; gap:12px;
+      align-items:end;
+    }
+    @media (max-width:700px){ form.grid{ grid-template-columns: 1fr; } }
+
+    label{ display:block; font-weight:600; margin-bottom:6px; color:var(--text); font-size:0.9rem; }
+    input[type="number"], select {
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); font-size:0.95rem; color:var(--text);
+      background:transparent;
+    }
+
+    .full { grid-column: 1 / -1; }
+    .controls { display:flex; gap:10px; margin-top:12px; }
+    .btn {
+      background:var(--accent); color:white; border:0; padding:11px 14px; border-radius:10px; cursor:pointer; font-weight:700;
+    }
+    .btn.secondary { background:transparent; border:1px solid var(--border); color:var(--text); }
+
+    /* Result box */
+    .result {
+      margin-top:14px; padding:14px; border-radius:10px; background:#f8fafc; border:1px solid #e9f2ff;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .result .label { color:var(--muted); font-size:0.92rem; }
+    .result .value { font-size:1.6rem; font-weight:800; color:var(--accent); }
+
+    .small { color:var(--muted); font-size:0.86rem; }
+
+    /* tiny helper */
+    .note { margin-top:8px; color:var(--muted); font-size:0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">RE</div>
+      <div>
+        <h1>Real Estate Price Predictor</h1>
+        <p class="lead">Enter property details and click <strong>Predict</strong> — the model will return a single predicted value.</p>
+      </div>
+    </header>
+
+    <main class="card">
+      <!-- Form: works with both AJAX and form submit fallback -->
+      <form id="predictForm" class="grid" method="post" action="/predict" autocomplete="off">
+        <div style="grid-column:1 / -1">
+          <label for="location">Location</label>
+          <select id="location" name="location">
+            <option value="">— Select location —</option>
+            {% if locations %}
+              {% for loc in locations %}
+                <option value="{{ loc }}" {% if input_data and input_data.get('location')==loc %}selected{% endif %}>{{ loc }}</option>
+              {% endfor %}
+            {% endif %}
+          </select>
+        </div>
+
+        <div>
+          <label for="tos">Total Square Feet (TOS)</label>
+          <input id="tos" name="tos" type="number" step="0.1" placeholder="e.g., 1200" value="{{ input_data.tos if input_data and input_data.get('tos') else '' }}">
+        </div>
+
+        <div>
+          <label for="bhk">BHK</label>
+          <input id="bhk" name="bhk" type="number" step="1" placeholder="e.g., 3" value="{{ input_data.bhk if input_data and input_data.get('bhk') else '' }}">
+        </div>
+
+        <div>
+          <label for="bathroom">Bathrooms</label>
+          <input id="bathroom" name="bathroom" type="number" step="1" placeholder="e.g., 2" value="{{ input_data.bathroom if input_data and input_data.get('bathroom') else '' }}">
+        </div>
+
+        <div>
+          <label for="balcony">Balconies</label>
+          <input id="balcony" name="balcony" type="number" step="1" placeholder="e.g., 1" value="{{ input_data.balcony if input_data and input_data.get('balcony') else '' }}">
+        </div>
+
+        <div class="full controls">
+          <button id="predictBtn" type="button" class="btn">Predict</button>
+          <button id="clearBtn" type="button" class="btn secondary">Clear</button>
+        </div>
+      </form>
+
+      <div id="resultBox" class="result" style="display:none;">
+        <div>
+          <div class="label">Predicted Price</div>
+          <div class="small" id="resultNote">Based on saved model (real_estate.pkl)</div>
+        </div>
+        <div class="value" id="resultValue">—</div>
+      </div>
+
+      <div class="note">If the model is not loaded on the server, you'll get an error message. Use the Flask console to verify model load.</div>
+    </main>
+  </div>
+
+  <script>
+    // Minimal, clear JS — AJAX POST to /predict and show single numeric value.
+    const predictBtn = document.getElementById('predictBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const resultBox = document.getElementById('resultBox');
+    const resultValue = document.getElementById('resultValue');
+    const resultNote = document.getElementById('resultNote');
+
+    function getPayload() {
+      return {
+        location: document.getElementById('location').value.trim(),
+        tos: document.getElementById('tos').value,
+        bhk: document.getElementById('bhk').value,
+        bathroom: document.getElementById('bathroom').value,
+        balcony: document.getElementById('balcony').value
+      };
+    }
+
+    function showResult(text, isError=false) {
+      resultBox.style.display = 'flex';
+      resultValue.textContent = text;
+      if (isError) {
+        resultBox.style.borderLeft = '4px solid #ef4444';
+        resultValue.style.color = '#ef4444';
+        resultNote.textContent = 'Error';
+      } else {
+        resultBox.style.borderLeft = '4px solid #dbeafe';
+        resultValue.style.color = '';
+        resultNote.textContent = 'Based on saved model (real_estate.pkl)';
+      }
+    }
+
+    predictBtn.addEventListener('click', async () => {
+      const payload = getPayload();
+
+      // basic validation
+      if (!payload.tos || !payload.bhk || !payload.bathroom || !payload.balcony) {
+        showResult('❌ Please fill all numeric fields (TOS, BHK, Bathroom, Balcony).', true);
+        return;
+      }
+
+      // show temporary state
+      showResult('Predicting…');
+
+      try {
+        const res = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          const msg = data && data.error ? data.error : 'Server error';
+          showResult('❌ ' + msg, true);
+          return;
+        }
+
+        // expected: { prediction: number, location_assigned: bool }
+        if (data && typeof data.prediction !== 'undefined') {
+          // format number (no currency decided by you; show raw)
+          const p = Number(data.prediction);
+          showResult(p.toFixed(2));
+        } else {
+          showResult('❌ Unexpected response from server', true);
+        }
+      } catch (err) {
+        showResult('❌ Network error: ' + err.message, true);
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      document.getElementById('location').value = '';
+      document.getElementById('tos').value = '';
+      document.getElementById('bhk').value = '';
+      document.getElementById('bathroom').value = '';
+      document.getElementById('balcony').value = '';
+      resultBox.style.display = 'none';
+      resultValue.textContent = '—';
+      resultNote.textContent = 'Based on saved model (real_estate.pkl)';
+    });
+  </script>
+</body>
+</html>

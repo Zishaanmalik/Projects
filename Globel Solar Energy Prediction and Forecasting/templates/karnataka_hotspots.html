@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karnataka Solar Hotspots · Solar Energy Predictor</title>
+
+    <!-- Tailwind utility helpers -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: {
+                        'float-slow': 'floaty 6s ease-in-out infinite'
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Aurora theme styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/karnataka.css') }}">
+</head>
+<body>
+    <main class="container">
+        <header class="hero">
+            <div class="hero-content">
+                <span class="brand-badge">
+                    <span>&#128506;&#65039;</span>
+                    Karnataka Regional Spotlight
+                </span>
+                <h1 class="hero-title">Karnataka Solar Hotspots</h1>
+                <p class="hero-subtitle">
+                    Live AI-powered forecasts across the state's key cities. Track hourly updates to uncover the brightest solar opportunities.
+                </p>
+                <div class="hero-actions">
+                    <button id="refreshBtn" type="button" class="button-primary button-compact">
+                        <span class="refresh-label">Refresh Predictions</span>
+                        <span id="refreshLoader" class="loader hidden" aria-hidden="true"></span>
+                    </button>
+                    <a href="/" class="button-outline">&#8592; Back to Predictor</a>
+                    <a href="{{ url_for('prediction.karnataka_overview') }}" class="button-outline">&#128270; Detailed Overview</a>
+                    <a href="/api/history-page" class="button-outline">&#128202; Forecast Archive</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-pill"><span class="emoji">&#9201;&#65039;</span>Auto-refresh every hour</div>
+                    <div class="hero-pill"><span class="emoji">&#9728;&#65039;</span>Optimised for rooftop planning</div>
+                    <div class="hero-pill"><span class="emoji">&#128640;</span>Satellite-backed irradiance</div>
+                </div>
+            </div>
+        </header>
+
+        <div id="hotspotError" class="error-banner hidden"></div>
+
+        <section class="layout-grid hotspots-layout">
+            <article class="glass-card map-card map-card--karnataka">
+                <div class="card-header">
+                    <h2><span class="emoji">&#128506;&#65039;</span>Statewide Visual</h2>
+                    <div class="last-updated-chip">
+                        <span class="emoji">&#9201;&#65039;</span>
+                        Updated <span id="lastUpdated">--</span>
+                    </div>
+                </div>
+                <p class="card-subtitle">Marker size and colour scale with predicted wattage for each city.</p>
+                <div id="karnatakaMap"></div>
+                <div class="map-insights">
+                    <div class="insight-chip highlight">
+                        <span class="insight-label">Top City</span>
+                        <span class="insight-value" id="mapBestCity">--</span>
+                    </div>
+                    <div class="insight-chip">
+                        <span class="insight-label">Peak Output</span>
+                        <span class="insight-value" id="mapPeakPower">--</span>
+                    </div>
+                    <div class="insight-chip">
+                        <span class="insight-label">Average Output</span>
+                        <span class="insight-value" id="mapAvgPower">--</span>
+                    </div>
+                </div>
+                <div class="map-legend">
+                    <span><span class="legend-dot legend-dot--high"></span> 500 W and above</span>
+                    <span><span class="legend-dot legend-dot--mid"></span> 300 - 499 W</span>
+                    <span><span class="legend-dot legend-dot--low"></span> Below 300 W</span>
+                </div>
+            </article>
+
+            <article class="glass-card city-panel">
+                <div class="card-header">
+                    <h2><span class="emoji">&#127750;</span>City Highlights</h2>
+                </div>
+                <p class="card-subtitle">Select a city card to focus the map and inspect local conditions.</p>
+                <div id="citiesGrid" class="hotspot-card-grid">
+                    <!-- Dynamically populated -->
+                </div>
+            </article>
+
+            <article class="glass-card analysis-panel">
+                <div class="card-header">
+                    <h2><span class="emoji">&#128202;</span>Graphs &amp; Analysis</h2>
+                </div>
+                <div class="analysis-grid">
+                    <section class="chart-card">
+                        <h3 class="chart-title">Output Distribution</h3>
+                        <div class="distribution-bar" id="distributionBar">
+                            <div class="distribution-segment high" id="distributionHigh"></div>
+                            <div class="distribution-segment medium" id="distributionMedium"></div>
+                            <div class="distribution-segment low" id="distributionLow"></div>
+                        </div>
+                        <div class="distribution-legend">
+                            <span><span class="legend-dot legend-dot--high"></span><span id="distributionHighLabel">High >= 500 W - 0</span></span>
+                            <span><span class="legend-dot legend-dot--mid"></span><span id="distributionMediumLabel">Medium 300-499 W - 0</span></span>
+                            <span><span class="legend-dot legend-dot--low"></span><span id="distributionLowLabel">Low < 300 W - 0</span></span>
+                        </div>
+                    </section>
+
+                    <section class="chart-card">
+                        <h3 class="chart-title">Top Performers</h3>
+                        <ol class="top-cities" id="topCitiesList">
+                            <li class="top-city">Awaiting prediction data...</li>
+                        </ol>
+                    </section>
+
+                    <section class="chart-card">
+                        <h3 class="chart-title">Quick Insights</h3>
+                        <p class="analysis-summary" id="analysisSummary">Refresh to load statistical insights for Karnataka hotspots.</p>
+                    </section>
+                </div>
+            </article>
+        </section>
+
+        <article class="glass-card stats-panel">
+            <div class="card-header">
+                <h2><span class="emoji">&#128200;</span>Performance Snapshot</h2>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-card primary">
+                    <span class="stat-title">Cities Monitored</span>
+                    <span class="stat-value" id="totalCities">--</span>
+                    <span class="stat-icon">&#128205;</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-title">Average Output</span>
+                    <span class="stat-value" id="avgPower">--</span>
+                    <span class="stat-icon">&#128202;</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-title">Peak Output</span>
+                    <span class="stat-value" id="maxPower">--</span>
+                    <span class="stat-icon">&#9889;</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-title">Top Performer</span>
+                    <span class="stat-value" id="bestCity">--</span>
+                    <span class="stat-icon">&#127937;</span>
+                </div>
+            </div>
+        </article>
+
+        <footer class="footer">
+            <p>Crafted with Flask, Leaflet, and pvlib for intelligent energy planning.</p>
+            <p>© 2025 Solar Energy Predictor · <a href="https://github.com" target="_blank" rel="noopener">Explore on GitHub</a></p>
+        </footer>
+    </main>
+
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-dialog">
+            <div class="loader"></div>
+            <p>Updating Karnataka solar predictions...</p>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Page logic -->
+    <script src="{{ url_for('static', filename='js/karnataka.js') }}"></script>
+</body>
+</html>

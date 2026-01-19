@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Energy Predictor · Aurora Dashboard</title>
+
+    <!-- Tailwind CSS for utility helpers used across the app -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: {
+                        'float-slow': 'floaty 6s ease-in-out infinite'
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Leaflet CSS for the interactive map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Custom Aurora theme styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <!-- Hero / intro -->
+        <header class="hero">
+            <div class="hero-content">
+                <span class="brand-badge">
+                    <span>&#9889;</span>
+                    AI-Assisted Solar Intelligence
+                </span>
+                <h1 class="hero-title">Solar Energy Predictor</h1>
+                <p class="hero-subtitle">
+                    Plan installations, optimise grid usage, and understand output potential with our blended weather&nbsp;+&nbsp;irradiance model.
+                </p>
+                <div class="hero-actions">
+                    <a href="#predictionForm" class="button-primary">Start a Prediction</a>
+                    <a href="/api/history-page" class="button-outline">View Energy History</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-pill"><span class="emoji">&#9728;&#65039;</span>Real-time irradiance synthesis</div>
+                    <div class="hero-pill"><span class="emoji">&#127757;</span>Global city coverage</div>
+                    <div class="hero-pill"><span class="emoji">&#128752;</span>Weather-backed AI forecasts</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main interactive surface -->
+        <section class="layout-grid">
+            <!-- Prediction form -->
+            <article class="glass-card input-card">
+                <div class="card-header">
+                    <h2><span class="emoji">&#129518;</span>Prediction Console</h2>
+                </div>
+                <p class="card-subtitle">
+                    Choose any city worldwide to synthesise live meteorological readings and predict expected solar power output for a standard panel.
+                </p>
+                <form id="predictionForm" class="form-grid mt-6">
+                    <div class="input-group">
+                        <label for="cityInput">City or region</label>
+                        <input
+                            type="text"
+                            id="cityInput"
+                            class="input-field"
+                            placeholder="e.g. Bengaluru, Nairobi, São Paulo"
+                            required
+                            autocomplete="off"
+                        >
+                    </div>
+                    <button type="submit" id="predictBtn" class="button-primary">
+                        <span id="btnText">Predict Solar Output</span>
+                        <span id="btnLoader" class="loader hidden" aria-hidden="true"></span>
+                    </button>
+                </form>
+                <div class="links-row">
+                    <a href="/api/history-page" class="button-outline">&#128202; Forecast Archive</a>
+                    <a href="/api/karnataka-hotspots" class="button-outline">&#128506;&#65039; Karnataka Hotspots</a>
+                </div>
+            </article>
+
+            <!-- Dynamic results -->
+            <article class="glass-card results-card hidden" id="resultsSection">
+                <div class="card-header">
+                    <h2><span class="emoji">&#9889;</span>Forecast Insight</h2>
+                </div>
+                <div class="location-chip">
+                    <h3 id="locationName">--</h3>
+                    <p id="weatherDescription">Awaiting fresh prediction...</p>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-card primary">
+                        <span class="stat-title">Predicted Output</span>
+                        <span class="stat-value" id="predictedPower">-- W</span>
+                        <span class="stat-icon">&#128267;</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-title">Temperature</span>
+                        <span class="stat-value" id="temperature">--°C</span>
+                        <span class="stat-icon">&#127777;&#65039;</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-title">Wind Speed</span>
+                        <span class="stat-value" id="windSpeed">-- m/s</span>
+                        <span class="stat-icon">&#128168;</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-title">Cloud Coverage</span>
+                        <span class="stat-value" id="clouds">--%</span>
+                        <span class="stat-icon">☁️</span>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="card-subtitle mb-3">Irradiance breakdown</h3>
+                    <div class="param-grid">
+                        <div class="param-item">
+                            <span>Direct POA</span>
+                            <span class="param-value" id="poaDirect">-- W/m²</span>
+                        </div>
+                        <div class="param-item">
+                            <span>Sky Diffuse</span>
+                            <span class="param-value" id="poaSky">-- W/m²</span>
+                        </div>
+                        <div class="param-item">
+                            <span>Ground Diffuse</span>
+                            <span class="param-value" id="poaGround">-- W/m²</span>
+                        </div>
+                        <div class="param-item">
+                            <span>Solar Elevation</span>
+                            <span class="param-value" id="solarElevation">--°</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Map visual -->
+            <article class="glass-card map-card">
+                <div class="card-header">
+                    <h2><span class="emoji">&#128506;&#65039;</span>Geo Visual</h2>
+                </div>
+                <p class="card-subtitle">
+                    Pinpoints the selected location and scales marker intensity with predicted output to provide instant spatial context.
+                </p>
+                <div id="map"></div>
+                <div class="map-insights" id="mapInsights">
+                    <div class="insight-chip highlight">
+                        <span class="insight-label">Predicted Output</span>
+                        <span class="insight-value" id="mapPredictedPower">--</span>
+                    </div>
+                    <div class="insight-chip">
+                        <span class="insight-label">Solar Elevation</span>
+                        <span class="insight-value" id="mapSolarElevation">--</span>
+                    </div>
+                    <div class="insight-chip">
+                        <span class="insight-label">Conditions</span>
+                        <span class="insight-value" id="mapConditions">--</span>
+                    </div>
+                </div>
+                <div class="map-legend">
+                    <span><span class="legend-dot legend-dot--high"></span> Higher output</span>
+                    <span><span class="legend-dot legend-dot--mid"></span> Moderate output</span>
+                    <span><span class="legend-dot legend-dot--low"></span> Lower output</span>
+                </div>
+            </article>
+        </section>
+
+        <div id="errorMessage" class="error-banner hidden"></div>
+
+        <footer class="footer">
+            <p>Crafted with Flask, Leaflet, and pvlib for intelligent energy planning.</p>
+            <p>© 2025 Solar Energy Predictor · <a href="https://github.com" target="_blank" rel="noopener">Explore on GitHub</a></p>
+        </footer>
+    </main>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Custom logic -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
