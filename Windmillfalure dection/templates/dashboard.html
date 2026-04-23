@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body style="background-image: url('/static/dashboard_bg.jpg');">
+
+<div class="sidebar">
+    <h2>⚙ Technician</h2>
+    <a href="/input">Input Form</a>
+    <a class="active" href="/dashboard">Dashboard</a>
+</div>
+
+<div class="content">
+
+    <h1>Maintenance History</h1>
+
+    <table class="history-table">
+        <tr>
+            <th>Rotor</th><th>Wind</th><th>Power</th><th>Gearbox</th>
+            <th>Bearing</th><th>Vibration</th><th>Ambient</th><th>Humidity</th><th>Status</th>
+        </tr>
+
+        {% for row in history %}
+        <tr>
+            {% for item in row[:-1] %}
+            <td>{{ item }}</td>
+            {% endfor %}
+            <td>
+                {% if row[-1] == "1" %}
+                    <span class="bad">Maintenance</span>
+                {% else %}
+                    <span class="good">OK</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+</body>
+</html>

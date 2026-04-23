@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Windmill Input</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body style="background-image: url('/static/input_bg.jpg');">
+
+<div class="sidebar">
+    <h2>⚙ Technician</h2>
+    <a class="active" href="/input">Input Form</a>
+    <a href="/dashboard">Dashboard</a>
+</div>
+
+<div class="content">
+
+    <div class="form-glass">
+        <h1>Windmill Data Input</h1>
+
+        <form action="/predict" method="POST">
+
+            <input type="number" step="any" name="rotor" placeholder="Rotor Speed (RPM)" required>
+            <input type="number" step="any" name="wind" placeholder="Wind Speed (m/s)" required>
+            <input type="number" step="any" name="power" placeholder="Power Output (kW)" required>
+            <input type="number" step="any" name="gearbox" placeholder="Gearbox Oil Temp (°C)" required>
+            <input type="number" step="any" name="bearing" placeholder="Generator Bearing Temp (°C)" required>
+            <input type="number" step="any" name="vibration" placeholder="Vibration Level (mm/s)" required>
+            <input type="number" step="any" name="ambient" placeholder="Ambient Temp (°C)" required>
+            <input type="number" step="any" name="humidity" placeholder="Humidity (%)" required>
+
+            <button type="submit">Predict</button>
+        </form>
+    </div>
+
+</div>
+
+</body>
+</html>

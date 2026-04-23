@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prediction Result</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body style="background-image: url('/static/dashboard_bg.jpg');">
+
+<div class="content-center">
+
+    <div class="result-card">
+        <h1>Prediction Result</h1>
+
+        {% if result == 1 %}
+            <p class="bad">⚠ Maintenance Required</p>
+        {% else %}
+            <p class="good">✔ No Maintenance Required</p>
+        {% endif %}
+
+        <a href="/input" class="back-btn">← Back</a>
+    </div>
+
+</div>
+
+</body>
+</html>
