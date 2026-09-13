@@ -1,12 +1,5 @@
-"# building"  "# building"  
+"# building"  
 "# building
-"# building"  "# building"  
-"# building"# building"  
-"# building"# building"  
-"# building"# building"  
-"# building"# building"  
-"# building"# building"  
-"# building"# building"  
 "# building"# building"  
 "# building"# building"  
 "# building"# building"  
